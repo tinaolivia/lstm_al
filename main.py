@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+import torch
+import argparse
+import datetime
+import al
+import helpers
+
+import torchtext.data as data
+from pathlib import Path
+from fastai.text import *
+
+parser = argparse.ArgumentParser(description='LSTM language model and text classifier')
+# general
+parser.add_argument('-bs', type=int, default=32, help='batch size [default: 32]')
+parser.add_argument('-lr', type=float, default=3e-2, help='maximum learning rate [default: 3e-2]')
+parser.add_argument('-momentum', type=tuple, default=(0.8, 0.7), help='tuple of momentum for optimization [default: (0.8, 0.7)]')
+parser.add_argument('-epochs', type=int, default=50, help='maximum number of epochs [default: 50]')
+parser.add_argument('-earlystop', type=float, default=0.01, help='early stopping criterion [default: 0.01]')
+parser.add_argument('-save-dir', type=str, default='results', help='where to store model resulst [default: results]')
+parser.add_argument('-num-avg', type=int, default=10, help='number of runs to average over [default: 10]')
+# device
+parser.add_argument('-no-cuda', action='store_true', default=False, help='disable the gpu')
+# data
+parser.add_argument('-path', type=str, default='data', help='path to data [default: data]')
+parser.add_argument('-dataset', type=str, default='imdb', choices=['imdb', 'ag'], help='dataset [default: imdb]')
+parser.add_argument('-text-first', type=bool, default=True, help='whether text column (True) or label column (False) is first [default: True]')
+# active learning
+parser.add_argument('-method', type=str, default=None, help='active learning method [default: None]')
+parser.add_argument('-rounds', type=int, default=100, help='number of active learning loops [default:100]')
+parser.add_argument('-inc', type=int, default=1, help='number of instances added at each active learning loop [default: 1]')
+# defining parser
+args = parser.parse_args()
+
+text_field = data.Field(lower=True)
+label_field = data.Field(sequential=False)
+
+args.cuda = (not args.no_cuda) and torch.cuda.is_available(); del args.no_cuda
+if args.text_first: 
+    args.cols = (0,1)
+    args.datafields = [("text", text_field), ("label", label_field)]
+    args.names = ['text', 'label']
+else: 
+    args.cols = torch.tensor(1,0)
+    args.datafields = [("label", label_field), ("text", text_field)]
+    args.names = ['label', 'text']
+args.model = 'enc'
+
+# making path and save_dir Posixpath
+args.path = Path(args.path)/args.dataset
+args.save_dir = Path(args.save_dir)/datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+if not args.save_dir.is_dir(): args.save_dir.mkdir()
+
+# defining DataBunch objects for langage modelling and classification
+print('\nCreating DataBunch objects...')
+data_lm = TextLMDataBunch.from_csv(args.path, csv_name='train.csv', test='val.csv', 
+                                   text_cols=args.cols[0], label_cols=args.cols[1])
+data_clas = TextClasDataBunch.from_csv(args.path, csv_name='train.csv', test='val.csv', 
+                                       text_cols=args.cols[0], label_cols=args.cols[1], vocab=data_lm.train_ds.vocab, bs=args.bs)
+
+# fine-tuning language model
+print('\nFine-tuning language model ...')
+helpers.language_model(data_lm, args)
+# creating a classifier
+print('\nTraining classifier ...')
+model = helpers.classifier(data_clas, args)
+
+for avg_iter in range(args.num_avg):
+    if args.method is not None:
+        al.al(model, avg_iter, args)
