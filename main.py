@@ -67,3 +67,6 @@ model = helpers.classifier(data_clas, args)
 for avg_iter in range(args.num_avg):
     if args.method is not None:
         al.al(model, avg_iter, args)
+    else: 
+        print('no method selected')
+        break

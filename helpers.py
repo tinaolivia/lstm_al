@@ -8,27 +8,33 @@ from pathlib import Path
 
 def language_model(data_lm, args):
     learn = language_model_learner(data_lm, AWD_LSTM, callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
-    learn.lr_find(stop_div=False)
-    learn.recorder.plot(suggestion=True)
-    max_lr = learn.recorder.min_grad_lr
     learn.unfreeze()
-    while something:
-        learn.fit_one_cycle(args.epochs, max_lr=max_lr, moms=args.momentum)
-        learn.lr_find()
-        max_lr = learn.recorder.min_grad_lr
+    learn.fit(args.epochs)
     learn.save_encoder(args.model)
+    #learn.lr_find()
+    #learn.recorder.plot(suggestion=True)
+    #max_lr = learn.recorder.min_grad_lr
+    #learn.unfreeze()
+    #while 
+    #    learn.unfreeze()
+    #    learn.fit_one_cycle(args.epochs, max_lr=args.lr, moms=args.momentum)
+        #learn.lr_find()
+        #max_lr = learn.recorder.min_grad_lr
+    #    learn.save_encoder(args.model)
     
 def classifier(data_clas, args):
     learn = text_classifier_learner(data_clas, AWD_LSTM, callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
     learn.load_encoder(args.model)
-    learn.lr_find()
-    max_lr = learn.recorder.min_grad_lr
-    learn.fit_one_cycle(args.epochs, max_lr=max_lr, moms=args.momentum)
     learn.unfreeze()
-    while something:
-        learn.fit_one_cycle(args.epochs, max_lr=max_lr, moms=args.momentum)
-        learn.lr_find()
-        max_lr = learn.recorder.min_grad_lr
+    learn.fit(args.epochs)
+    #learn.lr_find()
+    #max_lr = learn.recorder.min_grad_lr
+    #learn.fit_one_cycle(args.epochs, max_lr=args.lr, moms=args.momentum)
+    #learn.unfreeze()
+    #for i in range(10):
+    #    learn.fit_one_cycle(args.epochs, max_lr=args.lr, moms=args.momentum)
+        #learn.lr_find()
+        #max_lr = learn.recorder.min_grad_lr
     return learn
 
 
