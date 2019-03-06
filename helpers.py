@@ -7,6 +7,10 @@ from fastai.callbacks.tracker import *
 from pathlib import Path
 
 def language_model(data_lm, args):
+    '''
+        input:
+        data_lm: TextLMDataBunch object
+    '''
     learn = language_model_learner(data_lm, AWD_LSTM, callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
     learn.unfreeze()
     learn.fit(args.epochs)
@@ -14,6 +18,10 @@ def language_model(data_lm, args):
 
     
 def classifier(data_clas, args):
+    '''
+        input:
+        data_clas: TextClasDataBunch object
+    '''
     learn = text_classifier_learner(data_clas, AWD_LSTM, callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
     learn.load_encoder(args.model)
     learn.unfreeze()
