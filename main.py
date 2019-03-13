@@ -2,6 +2,8 @@
 import torch
 import argparse
 import datetime
+import pandas as pd
+
 import al
 import helpers
 
@@ -20,8 +22,10 @@ parser.add_argument('-save-dir', type=str, default='results', help='where to sto
 parser.add_argument('-num-avg', type=int, default=10, help='number of runs to average over [default: 10]')
 # device
 parser.add_argument('-no-cuda', action='store_true', default=False, help='disable the gpu')
+# model
+parser.add_argument('-model', type=str, default='enc', help='name for storing language model [default: enc]')
 # data
-parser.add_argument('-path', type=str, default='data', help='path to data [default: data]')
+parser.add_argument('-path', type=str, default='data', help='path to data [default: data/dataset (e.g. data/imdb/)]')
 parser.add_argument('-dataset', type=str, default='imdb', choices=['imdb', 'ag'], help='dataset [default: imdb]')
 parser.add_argument('-text-first', type=bool, default=True, help='whether text column (True) or label column (False) is first [default: True]')
 # active learning
@@ -31,9 +35,11 @@ parser.add_argument('-inc', type=int, default=1, help='number of instances added
 # defining parser
 args = parser.parse_args()
 
+# defining text and labeld fields
 text_field = data.Field(lower=True)
 label_field = data.Field(sequential=False)
 
+args.now = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 args.cuda = (not args.no_cuda) and torch.cuda.is_available(); del args.no_cuda
 if args.text_first: 
     args.cols = (0,1)
@@ -43,12 +49,17 @@ else:
     args.cols = torch.tensor(1,0)
     args.datafields = [("label", label_field), ("text", text_field)]
     args.names = ['label', 'text']
-args.model = 'enc'
+#args.model = '{}_{}'.format(args.model, args.method)
 
 # making path and save_dir Posixpath
 args.path = Path(args.path)/args.dataset
-args.save_dir = Path(args.save_dir)/datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+args.save_dir = Path(args.save_dir)/args.now
 if not args.save_dir.is_dir(): args.save_dir.mkdir()
+# creating dated path for saving updated datasets later
+if not (args.path/args.now).is_dir(): (args.path/args.now).mkdir()
+# copying validation set to new dated path
+val_df = pd.read_csv(args.path/'val.csv', header=None, names=args.names)
+val_df.to_csv(args.path/args.now/'val.csv', index=False, header=False)
 
 # defining DataBunch objects for langage modelling and classification
 print('\nCreating DataBunch objects...')

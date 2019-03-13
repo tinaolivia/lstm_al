@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-import pandas as pd
-import torch
+import csv
 
 from fastai.text import *
 from fastai.callbacks.tracker import *
-from pathlib import Path
 
 def language_model(data_lm, args):
     '''
@@ -44,5 +42,18 @@ def update_datasets(train, test, subset, args):
     '''
     train = train.append(test.iloc[subset])
     test = test.drop(subset)
-    train.to_csv(args.path/'train_up.csv', index=False, header=False)
-    test.to_csv(args.path/'test_up.csv', index=False, header=False)
+    train.to_csv(args.path/args.now/'train_up.csv', index=False, header=False)
+    test.to_csv(args.path/args.now/'test_up.csv', index=False, header=False)
+    
+    
+def write_result(filename, mode, result, args):
+    '''
+        input:
+        filename: path and filename
+        mode: writing mode, w=crate new file, a=append to existing
+        result: list containing results to add to file
+    '''
+    with open(filename, mode=mode) as csvfile:
+        csvwriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        csvwriter.writerow(result)
+
