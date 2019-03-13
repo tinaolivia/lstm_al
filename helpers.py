@@ -11,7 +11,9 @@ def language_model(data_lm, args):
         input:
         data_lm: TextLMDataBunch object
     '''
-    learn = language_model_learner(data_lm, AWD_LSTM, callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
+    learn = language_model_learner(data_lm, AWD_LSTM, pretrained=True,
+                                   callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
+    learn.fit(args.epochs)
     learn.unfreeze()
     learn.fit(args.epochs)
     learn.save_encoder(args.model)
@@ -22,8 +24,12 @@ def classifier(data_clas, args):
         input:
         data_clas: TextClasDataBunch object
     '''
-    learn = text_classifier_learner(data_clas, AWD_LSTM, callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
+    learn = text_classifier_learner(data_clas, AWD_LSTM, pretrained=True,
+                                    callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
     learn.load_encoder(args.model)
+    learn.fit(args.epochs)
+    learn.freeze_to(-2)
+    learn.fit(args.epochs)
     learn.unfreeze()
     learn.fit(args.epochs)
     return learn
