@@ -14,7 +14,7 @@ from fastai.text import *
 parser = argparse.ArgumentParser(description='LSTM language model and text classifier')
 # general
 parser.add_argument('-bs', type=int, default=32, help='batch size [default: 32]')
-parser.add_argument('-lr', type=float, default=3e-2, help='maximum learning rate [default: 3e-2]')
+parser.add_argument('-lr', type=float, default=1e-2, help='maximum learning rate [default: 3e-2]')
 parser.add_argument('-momentum', type=tuple, default=(0.8, 0.7), help='tuple of momentum for optimization [default: (0.8, 0.7)]')
 parser.add_argument('-epochs', type=int, default=50, help='maximum number of epochs [default: 50]')
 parser.add_argument('-earlystop', type=float, default=0.01, help='early stopping criterion [default: 0.01]')
@@ -36,9 +36,12 @@ parser.add_argument('-inc', type=int, default=1, help='number of instances added
 args = parser.parse_args()
 
 # defining text and labeld fields
+print('Creating fields \n')
 text_field = data.Field(lower=True)
 label_field = data.Field(sequential=False)
 
+# defining additional or final arguments
+print('Defining additional/final arguments. \n')
 args.now = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 args.cuda = (not args.no_cuda) and torch.cuda.is_available(); del args.no_cuda
 if args.text_first: 
@@ -58,6 +61,7 @@ if not args.save_dir.is_dir(): args.save_dir.mkdir()
 # creating dated path for saving updated datasets later
 if not (args.path/args.now).is_dir(): (args.path/args.now).mkdir()
 # copying validation set to new dated path
+print('Copying validation set to time specific folder. \n')
 val_df = pd.read_csv(args.path/'val.csv', header=None, names=args.names)
 val_df.to_csv(args.path/args.now/'val.csv', index=False, header=False)
 

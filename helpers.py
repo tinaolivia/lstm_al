@@ -9,11 +9,14 @@ def language_model(data_lm, args):
         input:
         data_lm: TextLMDataBunch object
     '''
-    learn = language_model_learner(data_lm, AWD_LSTM, pretrained=True,
+    learn = language_model_learner(data_lm, AWD_LSTM, pretrained=True, drop_mult=0.5,
                                    callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
-    learn.fit(args.epochs)
+    learn.fit_one_cycle(1, args.lr)
     learn.unfreeze()
-    learn.fit(args.epochs)
+    learn.fit_one_cycle(1, args.lr/10)
+    #learn.fit(args.epochs)
+    #learn.unfreeze()
+    #learn.fit(args.epochs)
     learn.save_encoder(args.model)
 
     
@@ -22,14 +25,20 @@ def classifier(data_clas, args):
         input:
         data_clas: TextClasDataBunch object
     '''
-    learn = text_classifier_learner(data_clas, AWD_LSTM, pretrained=True,
+    learn = text_classifier_learner(data_clas, AWD_LSTM, pretrained=True, drop_mult=0.5,
                                     callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
     learn.load_encoder(args.model)
-    learn.fit(args.epochs)
+    learn.fit_one_cycle(1, args.lr)
+    #learn.unfreeze()
+    #learn.fit_one_cycle(2, args.lr)
+    #learn.fit(args.epochs)
     learn.freeze_to(-2)
-    learn.fit(args.epochs)
+    learn.fit_one_cycle(1, slice(5e-3/2., 5e-3))
     learn.unfreeze()
-    learn.fit(args.epochs)
+    learn.fit_one_cycle(1, slice(2e-3/100, 2e-3))
+    #learn.fit(args.epochs)
+    #learn.unfreeze()
+    #learn.fit(args.epochs)
     return learn
 
 
