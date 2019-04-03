@@ -3,21 +3,37 @@ import csv
 
 from fastai.text import *
 from fastai.callbacks.tracker import *
+from fastai.callbacks import CSVLogger, SaveModelCallback
 
 def language_model(data_lm, args):
     '''
         input:
         data_lm: TextLMDataBunch object
     '''
-    learn = language_model_learner(data_lm, AWD_LSTM, pretrained=True, drop_mult=0.5,
-                                   callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
+    learn = language_model_learner(data_lm, AWD_LSTM, pretrained=args.pretrained, drop_mult=0.5)
+    learn.callback_fns += [partial(CSVLogger, filename='logs')]
+    # training frozen
+    learn.freeze_to(-1)
     learn.fit_one_cycle(1, args.lr)
+    # training unfrozen
     learn.unfreeze()
-    learn.fit_one_cycle(1, args.lr/10)
+    learn.fit_one_cycle(20, args.lr/10, callbacks=[SaveModelCallback(learn, every='improvement', monitor='accuracy', name='args.model')])
+    
+    
+    #learn = language_model_learner(data_lm, AWD_LSTM, pretrained=args.pretrained, drop_mult=0.5,
+    #                               callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
+    # finding a suitable learning rate
+    #learn.lr_find()
+    #learn.recorder.plot(return_fig=False, suggestion=True)
+    #lr = learn.recorder.min_grad_lr
+    #print('success')
+    #learn.fit_one_cycle(1, args.lr)
+    #learn.unfreeze()
+    #learn.fit_one_cycle(1, args.lr/10)
     #learn.fit(args.epochs)
     #learn.unfreeze()
     #learn.fit(args.epochs)
-    learn.save_encoder(args.model)
+    #learn.save_encoder(args.model)
 
     
 def classifier(data_clas, args):
@@ -25,8 +41,8 @@ def classifier(data_clas, args):
         input:
         data_clas: TextClasDataBunch object
     '''
-    learn = text_classifier_learner(data_clas, AWD_LSTM, pretrained=True, drop_mult=0.5,
-                                    callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
+    learn = text_classifier_learner(data_clas, AWD_LSTM, pretrained=args.pretrained, drop_mult=0.5)
+    #                                callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
     learn.load_encoder(args.model)
     learn.fit_one_cycle(1, args.lr)
     #learn.unfreeze()

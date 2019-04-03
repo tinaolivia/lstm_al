@@ -3,6 +3,7 @@ import torch
 import argparse
 import datetime
 import pandas as pd
+import sys
 
 import al
 import helpers
@@ -24,6 +25,7 @@ parser.add_argument('-num-avg', type=int, default=10, help='number of runs to av
 parser.add_argument('-no-cuda', action='store_true', default=False, help='disable the gpu')
 # model
 parser.add_argument('-model', type=str, default='enc', help='name for storing language model [default: enc]')
+parser.add_argument('-pretrained', type=bool, default=True, help='using pretrained model [default: True]')
 # data
 parser.add_argument('-path', type=str, default='data', help='path to data [default: data/dataset (e.g. data/imdb/)]')
 parser.add_argument('-dataset', type=str, default='imdb', choices=['imdb', 'ag'], help='dataset [default: imdb]')
@@ -60,17 +62,25 @@ args.save_dir = Path(args.save_dir)/args.now
 if not args.save_dir.is_dir(): args.save_dir.mkdir()
 # creating dated path for saving updated datasets later
 if not (args.path/args.now).is_dir(): (args.path/args.now).mkdir()
+# creating dataframes
+print('\nCreatinf DataFrames ... \n')
+train_df = pd.read_csv(args.path/'train.csv', header=None, names=args.names)
+valid_df = pd.read_csv(args.path/'val.csv', header=None, names=args.names)
+test_df = pd.read_csv(args.path/'test.csv', header=None, names=args.names)
 # copying validation set to new dated path
 print('Copying validation set to time specific folder. \n')
-val_df = pd.read_csv(args.path/'val.csv', header=None, names=args.names)
-val_df.to_csv(args.path/args.now/'val.csv', index=False, header=False)
+valid_df.to_csv(args.path/args.now/'val.csv', index=False, header=False)
 
-# defining DataBunch objects for langage modelling and classification
+
+# creating datasets 
+train_ds = data.TabularDataset(path=args.path/'train.csv', format='csv', fields=args.datafields)
+label_field.build_vocab(train_ds)
+args.class_num = len(label_field.vocab) - 1
+# creating DataBunch objects for langage modelling and classification
 print('\nCreating DataBunch objects...')
-data_lm = TextLMDataBunch.from_csv(args.path, csv_name='train.csv', test='val.csv', 
-                                   text_cols=args.cols[0], label_cols=args.cols[1])
-data_clas = TextClasDataBunch.from_csv(args.path, csv_name='train.csv', test='val.csv', 
-                                       text_cols=args.cols[0], label_cols=args.cols[1], vocab=data_lm.train_ds.vocab, bs=args.bs)
+data_lm = TextLMDataBunch.from_df(args.path, train_df=train_df, valid_df=valid_df, test_df=test_df, text_cols=0, label_cols=1)
+data_clas = TextClasDataBunch.from_df(args.path, train_df=train_df, valid_df=valid_df, test_df=test_df, text_cols=0, label_cols=1,
+                                      vocab=data_lm.train_ds.vocab, bs=args.bs)
 
 # fine-tuning language model
 print('\nFine-tuning language model ...')
