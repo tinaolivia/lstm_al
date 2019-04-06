@@ -34,6 +34,7 @@ parser.add_argument('-text-first', type=bool, default=True, help='whether text c
 parser.add_argument('-method', type=str, default=None, help='active learning method [default: None]')
 parser.add_argument('-rounds', type=int, default=100, help='number of active learning loops [default:100]')
 parser.add_argument('-inc', type=int, default=1, help='number of instances added at each active learning loop [default: 1]')
+parser.add_argument('-cluster', type=bool, default=False, help='whether to cluster unlabeled data before active learning [default: False]')
 # defining parser
 args = parser.parse_args()
 

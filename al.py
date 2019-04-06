@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 import pandas as pd
 import methods
 import helpers
@@ -14,14 +15,16 @@ def al(init_model, avg_iter, args):
     print('\nEvaluating initial model ...')
     preds = init_model.validate()
     
-    helpers.write_result(args.save_dir/'{}_{}_{}.csv'.format(args.dataset, args.method, avg_iter), 'w', ['Train Size', 'loss', 'accuracy', 'total {}'.format(args.method)], args)
-    helpers.write_result(args.save_dir/'{}_{}_{}.csv'.format(args.dataset, args.method, avg_iter), 'a', [len(train_df['text']), preds[0], preds[1].numpy(), 0], args)
+    helpers.write_result(args.save_dir/'{}_{}_{}.csv'.format(args.dataset, args.method, avg_iter), 'w', ['Train Size', 'loss', 'accuracy', 'total {}'.format(args.method), 'time'], args)
+    helpers.write_result(args.save_dir/'{}_{}_{}.csv'.format(args.dataset, args.method, avg_iter), 'a', [len(train_df['text']), preds[0], preds[1].numpy(), 0, 0], args)
     
     model = init_model
     
     print('\nStarting active learning loop ...')
     for al_loop in range(args.rounds):
         
+        
+        start = time.time()
         # selecting new instances to add to train
         if args.method == 'random':
             subset = methods.random(test_df, args)
@@ -29,6 +32,8 @@ def al(init_model, avg_iter, args):
         
         if args.method == 'entropy':
             subset, total = methods.entropy(model, args)
+            
+        end = time.time()
             
         print('Round {}: {} insances selected according to {}'.format(al_loop,len(subset), args.method))
         
@@ -55,5 +60,5 @@ def al(init_model, avg_iter, args):
         
         print('\nEvaluating ...')
         preds = model.validate()
-        helpers.write_result(args.save_dir/'{}_{}_{}.csv'.format(args.dataset, args.method, avg_iter), 'a', [len(train_df), preds[0], preds[1].numpy(), total], args)
+        helpers.write_result(args.save_dir/'{}_{}_{}.csv'.format(args.dataset, args.method, avg_iter), 'a', [len(train_df), preds[0], preds[1].numpy(), total, end-start], args)
 

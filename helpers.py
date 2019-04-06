@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import csv
+from sklearn.cluster import MiniBatchKMeans
+from sklearn.feature_extraction.text import TfidfVectorizer
+import torch
 
 from fastai.text import *
 from fastai.callbacks.tracker import *
@@ -56,6 +59,19 @@ def classifier(data_clas, args):
     #learn.unfreeze()
     #learn.fit(args.epochs)
     return learn
+
+
+def clustering(data, args):
+    '''
+        input:
+        data: dataframe column containing text
+    '''
+    vectorizer = TfidfVectorizer(stop_words='english')
+    X = vectorizer.fit_transform(data)
+    kmeans = MiniBatchKMeans(n_clusters=args.inc).fit_predict(X)
+    kmeans = torch.tensor(kmeans)
+    if args.cuda: kmeans = kmeans.cuda()
+    return kmeans
 
 
 def update_datasets(train, test, subset, args):
