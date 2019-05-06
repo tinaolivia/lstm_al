@@ -3,7 +3,6 @@ import torch
 import argparse
 import datetime
 import pandas as pd
-import sys
 
 import al
 import helpers
@@ -15,16 +14,17 @@ from fastai.text import *
 parser = argparse.ArgumentParser(description='LSTM language model and text classifier')
 # general
 parser.add_argument('-bs', type=int, default=32, help='batch size [default: 32]')
-parser.add_argument('-lr', type=float, default=1e-2, help='maximum learning rate [default: 3e-2]')
+parser.add_argument('-lr', type=float, default=1e-2, help='maximum learning rate [default: 1e-2]')
 parser.add_argument('-momentum', type=tuple, default=(0.8, 0.7), help='tuple of momentum for optimization [default: (0.8, 0.7)]')
 parser.add_argument('-epochs', type=int, default=50, help='maximum number of epochs [default: 50]')
-parser.add_argument('-earlystop', type=float, default=0.01, help='early stopping criterion [default: 0.01]')
+parser.add_argument('-earlystop', type=float, default=0.0001, help='early stopping criterion [default: 0.01]')
+parser.add_argument('-patience', type=int, default=3, help='patience for early stopping')
 parser.add_argument('-save-dir', type=str, default='results', help='where to store model resulst [default: results]')
 parser.add_argument('-num-avg', type=int, default=10, help='number of runs to average over [default: 10]')
 # device
 parser.add_argument('-no-cuda', action='store_true', default=False, help='disable the gpu')
 # model
-parser.add_argument('-model', type=str, default='enc', help='name for storing language model [default: enc]')
+parser.add_argument('-model', type=str, default='enc', help='name for storing language model [default: enc_<method>]')
 parser.add_argument('-pretrained', type=bool, default=True, help='using pretrained model [default: True]')
 # data
 parser.add_argument('-path', type=str, default='data', help='path to data [default: data/dataset (e.g. data/imdb/)]')
@@ -55,7 +55,7 @@ else:
     args.cols = torch.tensor(1,0)
     args.datafields = [("label", label_field), ("text", text_field)]
     args.names = ['label', 'text']
-#args.model = '{}_{}'.format(args.model, args.method)
+args.model = '{}_{}'.format(args.model, args.method)
 
 # making path and save_dir Posixpath
 args.path = Path(args.path)/args.dataset

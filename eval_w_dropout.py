@@ -9,7 +9,7 @@ import torch.optim as optim
 from fastai.callback import CallbackHandler
 from fastai.core import ifnone, is_listy, camel2snake, noop
 from fastai.torch_core import to_np, to_detach
-import fastai.torch_core
+from fastai import torch_core
 from fastprogress.fastprogress import progress_bar
 
 from torch import Tensor

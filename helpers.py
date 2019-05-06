@@ -13,30 +13,17 @@ def language_model(data_lm, args):
         input:
         data_lm: TextLMDataBunch object
     '''
-    learn = language_model_learner(data_lm, AWD_LSTM, pretrained=args.pretrained, drop_mult=0.5)
-    learn.callback_fns += [partial(CSVLogger, filename='logs')]
+    # defining language model
+    learn = language_model_learner(data_lm, AWD_LSTM, pretrained=True, drop_mult=0.3,
+                               callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=0.0001, patience=3)])
     # training frozen
-    learn.freeze_to(-1)
-    learn.fit_one_cycle(1, args.lr)
+    learn.fit_one_cycle(1, args.lr, moms=(0.8,0.7))
+    learn.save('fit_head')
     # training unfrozen
+    learn.load('fit_head')
     learn.unfreeze()
-    learn.fit_one_cycle(20, args.lr/10, callbacks=[SaveModelCallback(learn, every='improvement', monitor='accuracy', name='args.model')])
-    
-    
-    #learn = language_model_learner(data_lm, AWD_LSTM, pretrained=args.pretrained, drop_mult=0.5,
-    #                               callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
-    # finding a suitable learning rate
-    #learn.lr_find()
-    #learn.recorder.plot(return_fig=False, suggestion=True)
-    #lr = learn.recorder.min_grad_lr
-    #print('success')
-    #learn.fit_one_cycle(1, args.lr)
-    #learn.unfreeze()
-    #learn.fit_one_cycle(1, args.lr/10)
-    #learn.fit(args.epochs)
-    #learn.unfreeze()
-    #learn.fit(args.epochs)
-    #learn.save_encoder(args.model)
+    learn.fit_one_cycle(10, args.lr/10, moms=(0.8, 0.7))
+    learn.save_encoder(args.model)
 
     
 def classifier(data_clas, args):
@@ -44,20 +31,27 @@ def classifier(data_clas, args):
         input:
         data_clas: TextClasDataBunch object
     '''
-    learn = text_classifier_learner(data_clas, AWD_LSTM, pretrained=args.pretrained, drop_mult=0.5)
-    #                                callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=args.earlystop, patience=3)])
+    # defining classifier
+    learn = text_classifier_learner(data_clas, AWD_LSTM, pretrained=True, drop_mult=0.5,
+                                callback_fns=[partial(EarlyStoppingCallback, monitor='accuracy', min_delta=0.0001, patience=3)])
     learn.load_encoder(args.model)
-    learn.fit_one_cycle(1, args.lr)
-    #learn.unfreeze()
-    #learn.fit_one_cycle(2, args.lr)
-    #learn.fit(args.epochs)
+    # fitting freezed model
+    learn.fit_one_cycle(1,2e-2, moms=(0.8, 0.7))
+    learn.save('first_{}'.format(args.model))
+    # unfreezing one layer
+    learn.load('first_{}'.format(args.model))
     learn.freeze_to(-2)
-    learn.fit_one_cycle(1, slice(5e-3/2., 5e-3))
+    learn.fit_one_cycle(1, slice(1e-2/(2.6**4),1e-2), moms=(0.8,0.7))
+    learn.save('second_{}'.format(args.model))
+    # unfreezing one more layer
+    learn.load('second_{}'.format(args.model))
+    learn.freeze_to(-3)
+    learn.fit_one_cycle(1, slice(5e-3/33, 5e-3), moms=(0.8, 0.7))
+    learn.save('third_{}'.format(args.model))
+    # unfreezing model
+    learn.load('third_{}'.format(args.model))
     learn.unfreeze()
-    learn.fit_one_cycle(1, slice(2e-3/100, 2e-3))
-    #learn.fit(args.epochs)
-    #learn.unfreeze()
-    #learn.fit(args.epochs)
+    learn.fit_one_cycle(100, slice(1e-3/33, 1e-3), moms=(0.8, 0.7))
     return learn
 
 
