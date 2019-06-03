@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import csv
+import numpy as np
 from sklearn.cluster import MiniBatchKMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
 import torch
@@ -51,7 +52,7 @@ def classifier(data_clas, args):
     # unfreezing model
     learn.load('third_{}'.format(args.model))
     learn.unfreeze()
-    learn.fit_one_cycle(100, slice(1e-3/33, 1e-3), moms=(0.8, 0.7))
+    learn.fit_one_cycle(args.epochs, slice(1e-3/33, 1e-3), moms=(0.8, 0.7))
     return learn
 
 
@@ -92,3 +93,17 @@ def write_result(filename, mode, result, args):
         csvwriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         csvwriter.writerow(result)
 
+def check_batch_size(df, data_size, args):
+    
+    if np.mod(data_size, args.bs) == 1:
+        random_idx = np.random.randint(0, data_size)
+        df = df.drop(random_idx)
+        print('\nModulus is 1, removing index {}'.format(random_idx))
+    return df
+    
+    
+    
+    
+    
+    
+        

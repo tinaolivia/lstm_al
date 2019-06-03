@@ -85,6 +85,7 @@ def validate_w_dropout(model:nn.Module, dl:DataLoader, loss_func:OptLossFunc=Non
         nums = np.array(nums, dtype=np.float32)
         if average: return (to_np(torch.stack(val_losses)) * nums).sum() / nums.sum()
         else:       return val_losses
+    model.eval()
        
 
 loss_func_name2activ = {'cross_entropy_loss': F.softmax, 'nll_loss': torch.exp, 'poisson_nll_loss': torch.exp,

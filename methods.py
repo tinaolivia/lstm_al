@@ -53,6 +53,7 @@ def entropy(model, args, df=None):
         top_ind = sorted_ind[:args.inc]
                 
     subset = list(top_ind.cpu().numpy())
+    for i, idx in enumerate(subset): subset[i] = int(idx)
     return subset, top_e.cpu().numpy().sum()
 
 def margin(model, args, df=None):
@@ -74,13 +75,14 @@ def margin(model, args, df=None):
         top_ind = sorted_ind[:args.inc]
         
     subset = list(top_ind.cpu().numpy())
+    for i, idx in enumerate(subset): subset[i] = int(idx)
     return subset, top_e.cpu().numpy().sum()
 
 def variation_ratio(model, args, df=None):
     if args.cluster and (df is not None): kmeans = helpers.clustering(df, args)
     preds = model.get_preds(DatasetType.Test)[0].cuda()
     var = 1 - preds.max(dim=1)[0].cuda()
-    sorted_var, sorted_ind = var.sort(0, descending=True).cuda()
+    sorted_var, sorted_ind = var.sort(0, descending=True)
     if args.cluster and (df is not None):
         top_var = args.empty(args.inc).cuda()
         top_ind = args.empty(args.inc).cuda()
@@ -94,6 +96,7 @@ def variation_ratio(model, args, df=None):
         top_ind = sorted_var[:args.inc].cuda()
         
     subset = list(top_ind.cpu().numpy())
+    for i, idx in enumerate(subset): subset[i] = int(idx)
     return subset, top_e.cpu().numpy().sum()
 
 #-------------------------------------------------------------------------------------------------------
@@ -103,12 +106,12 @@ def dropout_variability(model, args, df=None):
     if args.cluster and (df is not None): kmeans = helpers.clustering(df, args)
     probs = []
     for i in range(args.num_preds):
-        probs.append(eval_w_dropout.get_preds(model, DatasetType.Test)[0]).cuda()
+        probs.append(eval_w_dropout.get_preds(model, DatasetType.Test)[0].cuda())
     probs = torch.stack(probs).cuda()
     mean = probs.mean(dim=0).cuda()
     var = torch.abs(probs - mean).sum(dim=0).sum(dim=1).cuda()
     # var = torch.pow(preds - mean, 2).sum(dim=0).sum(dim=1)
-    sorted_var, sorted_ind = var.sort(descending=True).cuda()
+    sorted_var, sorted_ind = var.sort(descending=True)
     if args.cluster and (df is not None):
         top_var = torch.empty(args.inc)
         top_ind = torch.empty(args.inc)
@@ -122,13 +125,14 @@ def dropout_variability(model, args, df=None):
         top_ind = sorted_ind[:args.inc]
                 
     subset = list(top_ind.cpu().numpy())
+    for i, idx in enumerate(subset): subset[i] = int(idx)
     return subset, top_var.cpu().numpy().sum()
 
 def dropout_entropy(model, args, df=None):
     if args.cluster and (df is not None): kmeans = helpers.clustering(df, args)
     probs = []
     for i in range(args.num_preds):
-        probs.append(eval_w_dropout.get_preds(model, DatasetType.Test)[0]).cuda()
+        probs.append(eval_w_dropout.get_preds(model, DatasetType.Test)[0].cuda())
     probs = torch.stack(probs).cuda()
     mean = probs.mean(dim=0).cuda()
     entropies = -(mean*torch.log(mean)).sum(dim=1).cuda()
@@ -146,17 +150,18 @@ def dropout_entropy(model, args, df=None):
         top_ind = sorted_ind[:args.inc]
 
     subset = list(top_ind.cpu().numpy())
+    for i, idx in enumerate(subset): subset[i] = int(idx)
     return subset, top_e.cpu().numpy().sum()
 
 def dropout_margin(model, args, df=None):
     if args.cluster and (df is not None): kmeans = helpers.clustering(df, args)
     probs = []
     for i in range(args.num_preds):
-        probs.append(eval_w_dropout.get_preds(model, DatasetType.Test)[0]).cuda()
+        probs.append(eval_w_dropout.get_preds(model, DatasetType.Test)[0].cuda())
     probs = torch.stack(probs).cuda()
-    sorted_mean = probs.mean(dim=0).sort(descending=True)[0].cuda()
+    sorted_mean = probs.mean(dim=0).sort(descending=True)[0]
     margins = sorted_mean[:,0] - sorted_mean[:,1]
-    sorted_m, sorted_ind = margins.sort(descending=False).cuda()
+    sorted_m, sorted_ind = margins.sort(descending=False)
     if args.cluster and (df is not None):
         top_m = torch.empty(args.inc)
         top_ind = torch.empty(args.inc)
@@ -170,17 +175,18 @@ def dropout_margin(model, args, df=None):
         top_ind = sorted_ind[:args.inc]
 
     subset = list(top_ind.cpu().numpy())
+    for i, idx in enumerate(subset): subset[i] = int(idx)
     return subset, top_m.cpu().numpy().sum()
 
 def dropout_variation(model, args, df=None):
     if args.cluster and (df is not None): kmeans = helpers.clustering(df, args)
     probs = []
     for i in range(args.num_preds):
-        probs.append(eval_w_dropout.get_preds(model, DatasetType.Test)[0]).cuda()
+        probs.append(eval_w_dropout.get_preds(model, DatasetType.Test)[0].cuda())
     probs = torch.stack(probs).cuda()
     means = probs.mean(dim=0).cuda()
     var = 1 - means.max(dim=1).cuda()
-    sorted_var, sorted_ind = var.sort(descending=True).cuda()
+    sorted_var, sorted_ind = var.sort(descending=True)
     if args.cluster and (df is not None):
         top_var = torch.empty(args.inc)
         top_ind = torch.empty(args.inc)
@@ -194,4 +200,5 @@ def dropout_variation(model, args, df=None):
         top_ind = sorted_ind[:args.inc]
 
     subset = list(top_ind.cpu().numpy())
+    for i, idx in enumerate(subset): subset[i] = int(idx)
     return subset, top_var.cpu().numpy().sum()

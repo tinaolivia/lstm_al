@@ -16,11 +16,11 @@ parser = argparse.ArgumentParser(description='LSTM language model and text class
 parser.add_argument('-bs', type=int, default=32, help='batch size [default: 32]')
 parser.add_argument('-lr', type=float, default=1e-2, help='maximum learning rate [default: 1e-2]')
 parser.add_argument('-momentum', type=tuple, default=(0.8, 0.7), help='tuple of momentum for optimization [default: (0.8, 0.7)]')
-parser.add_argument('-epochs', type=int, default=50, help='maximum number of epochs [default: 50]')
+parser.add_argument('-epochs', type=int, default=100, help='maximum number of epochs [default: 50]')
 parser.add_argument('-earlystop', type=float, default=0.0001, help='early stopping criterion [default: 0.01]')
 parser.add_argument('-patience', type=int, default=3, help='patience for early stopping')
 parser.add_argument('-save-dir', type=str, default='results', help='where to store model resulst [default: results]')
-parser.add_argument('-num-avg', type=int, default=10, help='number of runs to average over [default: 10]')
+parser.add_argument('-avg-num', type=int, default=10, help='number of runs to average over [default: 10]')
 # device
 parser.add_argument('-no-cuda', action='store_true', default=False, help='disable the gpu')
 # model
@@ -31,10 +31,13 @@ parser.add_argument('-path', type=str, default='data', help='path to data [defau
 parser.add_argument('-dataset', type=str, default='imdb', choices=['imdb', 'ag'], help='dataset [default: imdb]')
 parser.add_argument('-text-first', type=bool, default=True, help='whether text column (True) or label column (False) is first [default: True]')
 # active learning
-parser.add_argument('-method', type=str, default=None, help='active learning method [default: None]')
+parser.add_argument('-method', type=str, default=None, help='active learning method [default: None]', choices=['random', 'entropy', 'margin', 'variation_ratio', 
+                    'dropout_variability', 'dropout_entropy', 'dropout_margin', 'dropout_variation_ratio'])
+parser.add_argument('-dropout', type=bool, default=False, help='whether the active learning method is based on dropout or not')
 parser.add_argument('-rounds', type=int, default=100, help='number of active learning loops [default:100]')
 parser.add_argument('-inc', type=int, default=1, help='number of instances added at each active learning loop [default: 1]')
 parser.add_argument('-cluster', type=bool, default=False, help='whether to cluster unlabeled data before active learning [default: False]')
+parser.add_argument('-num-preds', type=int, default=10, help='number og predictiong made with dropout in bayesian methods')
 # defining parser
 args = parser.parse_args()
 
@@ -56,6 +59,7 @@ else:
     args.datafields = [("label", label_field), ("text", text_field)]
     args.names = ['label', 'text']
 args.model = '{}_{}'.format(args.model, args.method)
+if args.method == 'dropout_entropy' or args.method == 'dropout_margin': args.dropout = True
 
 # making path and save_dir Posixpath
 args.path = Path(args.path)/args.dataset
@@ -68,6 +72,7 @@ print('\nCreatinf DataFrames ... \n')
 train_df = pd.read_csv(args.path/'train.csv', header=None, names=args.names)
 valid_df = pd.read_csv(args.path/'val.csv', header=None, names=args.names)
 test_df = pd.read_csv(args.path/'test.csv', header=None, names=args.names)
+test_df = helpers.check_batch_size(test_df, len(test_df['text']), args)
 # copying validation set to new dated path
 print('Copying validation set to time specific folder. \n')
 valid_df.to_csv(args.path/args.now/'val.csv', index=False, header=False)
@@ -90,7 +95,7 @@ helpers.language_model(data_lm, args)
 print('\nTraining classifier ...')
 model = helpers.classifier(data_clas, args)
 
-for avg_iter in range(args.num_avg):
+for avg_iter in range(args.avg_num):
     if args.method is not None:
         al.al(model, avg_iter, args)
     else: 
