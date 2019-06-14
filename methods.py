@@ -60,8 +60,10 @@ def margin(model, args, df=None):
     if args.cluster and (df is not None): kmeans = helpers.clustering(df, args)
     preds = model.get_preds(DatasetType.Test)[0].cuda()
     sorted_ = preds.sort(descending=True)[0].cuda()
-    margins = sorted_[0] - sorted_[1]
+    #print(len(sorted_), len(sorted_[0]), len(sorted_[1]))
+    margins = sorted_[:,0] - sorted_[:,1]
     sorted_m, sorted_ind = margins.sort(0,descending=False)
+    #print(len(margins))
     if args.cluster and (df is not None):
         top_m = torch.empty(args.inc).cuda()
         top_ind = torch.empty(args.inc).cuda()
@@ -69,14 +71,14 @@ def margin(model, args, df=None):
             for j in range(len(df)):
                 if kmeans[sorted_ind[j]] == i:
                     top_m[i] = sorted_m[j]
-                    top_ind = sorted_ind[j]
+                    top_ind[i] = sorted_ind[j]
     else:
-        top_e = sorted_m[:args.inc]
+        top_m = sorted_m[:args.inc]
         top_ind = sorted_ind[:args.inc]
         
     subset = list(top_ind.cpu().numpy())
     for i, idx in enumerate(subset): subset[i] = int(idx)
-    return subset, top_e.cpu().numpy().sum()
+    return subset, top_m.cpu().numpy().sum()
 
 def variation_ratio(model, args, df=None):
     if args.cluster and (df is not None): kmeans = helpers.clustering(df, args)

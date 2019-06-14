@@ -68,7 +68,7 @@ if not args.save_dir.is_dir(): args.save_dir.mkdir()
 # creating dated path for saving updated datasets later
 if not (args.path/args.now).is_dir(): (args.path/args.now).mkdir()
 # creating dataframes
-print('\nCreatinf DataFrames ... \n')
+print('\nCreating DataFrames ... \n')
 train_df = pd.read_csv(args.path/'train.csv', header=None, names=args.names)
 valid_df = pd.read_csv(args.path/'val.csv', header=None, names=args.names)
 test_df = pd.read_csv(args.path/'test.csv', header=None, names=args.names)
