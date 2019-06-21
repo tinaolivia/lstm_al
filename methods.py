@@ -16,20 +16,6 @@ def random(data_size, args):
     subset = list(randperm[:args.inc])
     return subset
 
-def random_w_clustering(data_size, df, args):
-    '''
-        input:
-        data_size: number of instances
-    '''
-    kmeans = helpers.clustering(df, args)
-    randperm = torch.randperm(data_size)
-    subset = []
-    for i in range(args.inc):
-        for j in range(data_size):
-            if kmeans[randperm[j]] == i: subset.append(randperm[j])
-    return subset
-
-
 def entropy(model, args, df=None):
     '''
         input:
@@ -48,6 +34,7 @@ def entropy(model, args, df=None):
                 if kmeans[sorted_ind[j]] == i:
                     top_e[i] = sorted_e[j]
                     top_ind[i] = sorted_ind[j]
+                    break
     else:
         top_e = sorted_e[:args.inc]
         top_ind = sorted_ind[:args.inc]
@@ -72,6 +59,7 @@ def margin(model, args, df=None):
                 if kmeans[sorted_ind[j]] == i:
                     top_m[i] = sorted_m[j]
                     top_ind[i] = sorted_ind[j]
+                    break
     else:
         top_m = sorted_m[:args.inc]
         top_ind = sorted_ind[:args.inc]
@@ -93,6 +81,7 @@ def variation_ratio(model, args, df=None):
                 if kmeans[sorted_ind[j]] == i:
                     top_var[i] = sorted_var[j]
                     top_ind[i] = sorted_ind[j]
+                    break
     else:
         top_e = sorted_var[:args.inc].cuda()
         top_ind = sorted_var[:args.inc].cuda()
@@ -122,6 +111,7 @@ def dropout_variability(model, args, df=None):
                 if kmeans[sorted_ind[j]] == i:
                     top_var[i] = sorted_var[j]
                     top_ind[i] = sorted_ind[j]
+                    break
     else:
         top_var = sorted_var[:args.inc]
         top_ind = sorted_ind[:args.inc]
@@ -147,6 +137,7 @@ def dropout_entropy(model, args, df=None):
                 if kmeans[sorted_ind[j]] == i:
                     top_e[i] = sorted_e[j]
                     top_ind[i] = sorted_ind[j]
+                    break
     else:
         top_e = sorted_e[:args.inc]
         top_ind = sorted_ind[:args.inc]
@@ -172,6 +163,7 @@ def dropout_margin(model, args, df=None):
                 if kmeans[sorted_ind[j]] == i:
                     top_m[i] = sorted_m[j]
                     top_ind[i] = sorted_m[j]
+                    break
     else:
         top_m = sorted_m[:args.inc]
         top_ind = sorted_ind[:args.inc]
@@ -197,6 +189,7 @@ def dropout_variation(model, args, df=None):
                 if kmeans[sorted_ind[j]] == i:
                     top_var[i] = sorted_var[j]
                     top_ind[i] = sorted_ind[j]
+                    break
     else:
         top_var = sorted_var[:args.inc]
         top_ind = sorted_ind[:args.inc]
